@@ -4,8 +4,10 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -14,9 +16,7 @@ import java.util.logging.Handler;
 
 
 public class PrincipalServidor  {
-    private static Set<String> names = new HashSet<>();
-    private static Set<PrintWriter> writers = new HashSet<>();
-    
+    private static Map<String, PrintWriter> usuarios = new HashMap<>();
     public static void main(String[] args) throws IOException {
         System.out.println("the chat server is running");
         ExecutorService pool = Executors.newFixedThreadPool(500);
@@ -42,48 +42,42 @@ public class PrincipalServidor  {
     
     public void run (){
         try {
-            List<String> listanombres= new ArrayList<>(names);
-            List<PrintWriter> list = new ArrayList<>(writers);
             in= new Scanner(socket.getInputStream());
             out= new PrintWriter(socket.getOutputStream(),true);
              while (true) {                    
                     out.println("SUBMITNAME");
                     name= in.nextLine();
-                    if(name==null || name.contains("quit")){
-                        return;
+                    if(name==null || name.equalsIgnoreCase("quit") || name.isEmpty()){
+                        continue;
                     }
-                    synchronized(name){
-                        if(!names.contains(names)){
-                            names.add(name);
-                            
+                    synchronized(usuarios){
+                        if(!usuarios.containsValue(name)){
+                            usuarios.put(name, out);
                             out.println("NAMEACCEPTED " + name);
                 
-                            for(PrintWriter writer : writers){
+                            for(PrintWriter writer : usuarios.values()){
                                 writer.println("MESSAGE " + name + " joined");
                             }
-                           writers.add(out);
+                           //writers.add(out);
                             break;
                         }
                     }
                 }
             while (true) {                
                String input = in.nextLine();
+               int inp = input.indexOf(' ');
+               if(input.startsWith("/") && !input.startsWith("/quit")){
+                   String nombre = input.substring(1, inp);
+                   String mensaje = input.substring(inp, input.length());
+                   if (usuarios.containsKey(nombre)) {
+                       usuarios.get(nombre).println("MESSAGE (PM) " + mensaje);
+                       usuarios.get(name).println("MESSAGE (PM-" + nombre + ") " + mensaje);
+                   }
+               }
                 if (input.toLowerCase().startsWith("/quit")) {
                     return;
-            }
+                }
             
-              for (String n : listanombres) {
-                   if (input.startsWith("/"+n)) {
-                       System.out.println("llego aki");
-                   int index=listanombres.indexOf(n);
-                   System.out.println(index+"aaaaaaaaaaa");
-                   System.out.println(list.size());
-                   list.get(index).println("MESSAGE "+name+": "+input);
-                   break;
-                 
-                  }
-                   
-             }
            
              /*for (PrintWriter writer : writers) {
                writer.println("MESSAGE "+name+": "+input);
@@ -92,13 +86,10 @@ public class PrincipalServidor  {
         } catch (Exception e) {
             System.out.println(e);
         }finally {
-            if (out != null) {
-               writers.remove(out);
-            }
-            if (name != null) {
-                System.out.println(name+"is leaving");
-                names.remove(name);
-                for (PrintWriter writer : writers) {
+            if(out != null || name != null){
+                System.out.println(name+" is leaving");
+                usuarios.remove(name);
+                for (PrintWriter writer : usuarios.values()) {
                     writer.println("MESSAGE "+name+" has left");
                 }
             }
