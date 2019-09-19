@@ -25,7 +25,6 @@ public class PrincipalCliente {
     
     public PrincipalCliente(String serverAddress){
         this.serverAddress=serverAddress;
-        
         textField.setEditable(false);
         messageArea.setEditable(false);
         frame.getContentPane().add(textField,BorderLayout.SOUTH);
@@ -61,9 +60,11 @@ public class PrincipalCliente {
                 if (line.startsWith("SUBMITNAME")) {
                     out.println(getname());
                 }else if(line.startsWith("NAMEACCEPTED")){
+                    System.out.println(line);
                     this.frame.setTitle("Chatter -"+line.substring(13));
                     textField.setEditable(true);
                 }else if(line.startsWith("MESSAGE")){
+                    System.out.println(line);
                     messageArea.append(line.substring(8)+"\n");
                 }
             }
