@@ -16,7 +16,7 @@ import java.util.logging.Handler;
 
 
 public class PrincipalServidor  {
-    private static Map<String, PrintWriter> usuarios = new HashMap<>();
+    private static Map<String, PrintWriter> users = new HashMap<>();
     public static void main(String[] args) throws IOException {
         System.out.println("the chat server is running");
         ExecutorService pool = Executors.newFixedThreadPool(500);
@@ -50,46 +50,45 @@ public class PrincipalServidor  {
                     if(name==null || name.equalsIgnoreCase("quit") || name.isEmpty()){
                         continue;
                     }
-                    synchronized(usuarios){
-                        if(!usuarios.containsValue(name)){
-                            usuarios.put(name, out);
+                    synchronized(users){
+                        if(!users.containsValue(name)){
+                            users.put(name, out);
                             out.println("NAMEACCEPTED " + name);
                 
-                            for(PrintWriter writer : usuarios.values()){
+                            for(PrintWriter writer : users.values()){
                                 writer.println("MESSAGE " + name + " joined");
                             }
-                           //writers.add(out);
                             break;
                         }
                     }
                 }
-            while (true) {                
-               String input = in.nextLine();
-               int inp = input.indexOf(' ');
-               if(input.startsWith("/") && !input.startsWith("/quit")){
-                   String nombre = input.substring(1, inp);
-                   String mensaje = input.substring(inp, input.length());
-                   if (usuarios.containsKey(nombre)) {
-                       usuarios.get(nombre).println("MESSAGE (PM) " + mensaje);
-                       usuarios.get(name).println("MESSAGE (PM-" + nombre + ") " + mensaje);
-                   }
-               }
-                if (input.toLowerCase().startsWith("/quit")) {
-                    return;
+            while (true) {
+                String input = in.nextLine();
+                int inp = input.indexOf(' ');
+                if (input.startsWith("/") && !input.startsWith("/quit")) {
+                    String Receiver = input.substring(1, inp);
+                    String message = input.substring(inp, input.length());
+                    if (users.containsKey(Receiver)) {
+                        users.get(Receiver).println("MESSAGE (PM-FROM-" + name + "): " + message);
+                        users.get(name).println("MESSAGE (PM-TO-" + Receiver + "): " + message);
+                    }
+                } else {
+                    if (input.toLowerCase().startsWith("/quit")) {
+                        return;
+                    }
+                    for (PrintWriter writer : users.values()) {
+                        writer.println("MESSAGE " + name + ": " + input);
+                    }
                 }
-            
-           
-             /*for (PrintWriter writer : writers) {
-               writer.println("MESSAGE "+name+": "+input);
-             }    */            
+
             }
         } catch (Exception e) {
             System.out.println(e);
         }finally {
             if(out != null || name != null){
                 System.out.println(name+" is leaving");
-                usuarios.remove(name);
-                for (PrintWriter writer : usuarios.values()) {
+                users.remove(name);
+                for (PrintWriter writer : users.values()) {
                     writer.println("MESSAGE "+name+" has left");
                 }
             }
